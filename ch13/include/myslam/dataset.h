@@ -4,6 +4,8 @@
 #include "myslam/common_include.h"
 #include "myslam/frame.h"
 
+#include <opencv2/opencv.hpp>
+
 namespace myslam {
 
 /**
@@ -33,6 +35,12 @@ class Dataset {
     int current_image_index_ = 0;
 
     std::vector<Camera::Ptr> cameras_;
+
+    cv::VideoCapture video;
+    cv::Mat map1, map2;
+    cv::Mat cameraMatrix;
+    cv::Mat distortionCoefficient;
+
 };
 }  // namespace myslam
 

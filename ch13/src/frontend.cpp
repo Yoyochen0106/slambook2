@@ -387,7 +387,8 @@ bool Frontend::BuildInitMap() {
 }
 
 bool Frontend::Reset() {
-    LOG(INFO) << "Reset is not implemented. ";
+    // LOG(INFO) << "Reset is not implemented. ";
+    status_ = FrontendStatus::INITING;
     return true;
 }
 
