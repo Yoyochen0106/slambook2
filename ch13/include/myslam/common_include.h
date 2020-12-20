@@ -21,6 +21,8 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
+#define DLOG (LOG(INFO) << "DLOG: ")
+
 // typedefs for eigen
 // double matricies
 typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> MatXX;

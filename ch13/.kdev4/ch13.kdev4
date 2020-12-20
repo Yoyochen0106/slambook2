@@ -1,0 +1,40 @@
+[Buildset]
+BuildItems=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x00\x00\x01\x00\x00\x00\x08\x00c\x00h\x001\x003)
+
+[CMake]
+Build Directory Count=1
+Current Build Directory Index-Host System=0
+
+[CMake][CMake Build Directory 0]
+Build Directory Path=/home/nvidia/Desktop/slam/slambook2/ch13/build
+Build Type=
+CMake Binary=/usr/bin/cmake
+CMake Executable=/usr/bin/cmake
+Environment Profile=
+Extra Arguments=
+Install Directory=/usr/local
+Runtime=Host System
+
+[Launch]
+Launch Configurations=Launch Configuration 0
+
+[Launch][Launch Configuration 0]
+Configured Launch Modes=execute
+Configured Launchers=nativeAppLauncher
+Name=run_kitti_stereo
+Type=Native Application
+
+[Launch][Launch Configuration 0][Data]
+Arguments=
+Dependencies=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x00\x00\x03\x00\x00\x00\x08\x00c\x00h\x001\x003\x00\x00\x00\x06\x00a\x00p\x00p\x00\x00\x00 \x00r\x00u\x00n\x00_\x00k\x00i\x00t\x00t\x00i\x00_\x00s\x00t\x00e\x00r\x00e\x00o)
+Dependency Action=Build
+EnvironmentGroup=
+Executable=file:///home/nvidia/Desktop/slam/slambook2/ch13/bin/run_kitti_stereo
+External Terminal=konsole --noclose --workdir %workdir -e %exe
+Project Target=ch13,app,run_kitti_stereo
+Use External Terminal=false
+Working Directory=file:///home/nvidia/Desktop/slam/slambook2/ch13/
+isExecutable=true
+
+[Project]
+VersionControlSupport=kdevgit
