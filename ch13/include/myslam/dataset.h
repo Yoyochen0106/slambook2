@@ -33,6 +33,8 @@ class Dataset {
    private:
     std::string dataset_path_;
     int current_image_index_ = 0;
+    
+    bool first_frame_ = true;
 
     std::vector<Camera::Ptr> cameras_;
 

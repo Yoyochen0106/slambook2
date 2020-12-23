@@ -1,5 +1,6 @@
 #include "myslam/dataset.h"
 #include "myslam/frame.h"
+#include "myslam/config.h"
 
 #include <boost/format.hpp>
 #include <fstream>
@@ -8,20 +9,24 @@
 using namespace std;
 using namespace cv;
 
-#if 0
-static void imshowAndWait(Mat img) {
-    imshow("imshowAndWait", img);
-    while (1) {
-        if (waitKey(50) != -1) {
-            break;
+namespace myslam {
+
+#if 1
+    void imshowAndWait(string title, Mat img) {
+        imshow("imshowAndWait: " + title, img);
+        if (Config::Get<int>("isw_block") != 0) {
+            while (1) {
+                if (waitKey(50) != -1) {
+                    break;
+                }
+            }
+        } else {
+            waitKey(1);
         }
     }
-}
 #else
-static void imshowAndWait(Mat img) {}
+    void imshowAndWait(Mat img) {}
 #endif
-
-namespace myslam {
 
 Dataset::Dataset(const std::string& dataset_path)
     : dataset_path_(dataset_path), video(1) {
@@ -81,10 +86,16 @@ bool Dataset::Init() {
 
 Frame::Ptr Dataset::NextFrame() {
     cv::Mat image, img_left, img_right;
-    cv::Mat tmp;
 
     // read images
-    video >> image;
+    if (!first_frame_) {
+        video >> image;
+    } else {
+        for (int i = 0; i < 30; i++) {
+            video >> image;
+        }
+        first_frame_ = false;
+    }
 
     if (image.data == nullptr) {
         LOG(WARNING) << "cannot find images at index " << current_image_index_;
@@ -93,50 +104,36 @@ Frame::Ptr Dataset::NextFrame() {
 
 #define OUT(what) {cout << (what) << endl;};
 
-    tmp = Mat();
-    cvtColor(image, tmp, COLOR_BGR2GRAY);
-    image = tmp;
-    OUT(0);
-    cout << image.size() << endl;
-    
-    imshowAndWait(image);
+    {
+        Mat tmp;
+        cvtColor(image, tmp, COLOR_BGR2GRAY);
+        image = tmp;
+    }
 
     img_left = image(Rect(0, 0, image.cols / 2, image.rows)).clone();
     img_right = image(Rect(image.cols / 2, 0, image.cols / 2, image.rows)).clone();
-
-    OUT(1);
-    cout << img_left.size() << endl;
-    cout << img_right.size() << endl;
     
-    imshowAndWait(img_left);
+    {
+        Mat tmp(img_left.rows, img_left.cols, img_left.type());
+        remap(img_left, tmp, map1, map2, INTER_LINEAR);
+        img_left = tmp;
+    }
 
-    tmp.create(img_left.rows, img_left.cols, img_left.type());
-    remap(img_left, tmp, map1, map2, INTER_LINEAR);
-    OUT(1.5);
-    cout << img_left.size() << endl;
-    cout << tmp.size() << endl;
-    imshowAndWait(tmp);
-    img_left = tmp;
-
-    tmp.create(img_right.rows, img_right.cols, img_right.type());
-    remap(img_right, tmp, map1, map2, INTER_LINEAR);
-    img_right = tmp;
-    
-//    auto sz = [](Mat &mt) { cout << "(" << mt.cols << ", " << mt.rows << ")" << endl; };
-
-    OUT(2);    
-    cout << img_left.size() << endl;
-    cout << img_right.size() << endl;
-
-    img_left.copyTo(image(Rect(0, 0, image.cols / 2, image.rows)));
-    img_right.copyTo(image(Rect(image.cols / 2, 0, image.cols / 2, image.rows)));
-
-//     imshow("image", image);
-//     if ((waitKey(500) & 0xFF) == 'q') {
-// 		return nullptr;
-// 	}
+    {
+        Mat tmp(img_right.rows, img_right.cols, img_right.type());
+        remap(img_right, tmp, map1, map2, INTER_LINEAR);
+        img_right = tmp;
+    }
 
     cout << "Frame: " << current_image_index_ << endl;
+
+//     imwrite("out/orig.png", image);
+//     imwrite("out/lf.png", img_left);
+//     imwrite("out/rt.png", img_right);
+
+    if (Config::Get<int>("frame_wait") != 0) {
+        imshowAndWait("src", image);
+    }
 
     auto new_frame = Frame::CreateFrame();
     new_frame->left_img_ = img_left;

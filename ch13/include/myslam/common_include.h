@@ -115,4 +115,8 @@ using cv::Mat;
 // glog
 #include <glog/logging.h>
 
+
+void imshowAndWait(std::string title, cv::Mat img);
+
+
 #endif  // MYSLAM_COMMON_INCLUDE_H

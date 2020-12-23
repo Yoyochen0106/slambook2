@@ -2,6 +2,8 @@
 // Created by gaoxiang on 19-5-2.
 //
 
+#include "boost/format.hpp"
+
 #include <opencv2/opencv.hpp>
 
 #include "myslam/algorithm.h"
@@ -24,7 +26,7 @@ Frontend::Frontend() {
 
 bool Frontend::AddFrame(myslam::Frame::Ptr frame) {
     current_frame_ = frame;
-
+    
     switch (status_) {
         case FrontendStatus::INITING:
             StereoInit();
@@ -265,6 +267,19 @@ int Frontend::TrackLastFrame() {
         }
     }
 
+    cv::Mat canvas = current_frame_->left_img_.clone();
+    int radius = Config::Get<int>("gftt_radius");
+    for (auto &ft : current_frame_->features_left_) {
+        cv::circle(canvas, ft->position_.pt, radius, cv::Scalar(255, 0, 0), cv::FILLED);
+    }
+    std::stringstream ss;
+    ss << num_good_pts;
+    int feature_track_font = Config::Get<int>("feature_track_font");
+    int image_height = current_frame_->left_img_.size[0];
+    cv::putText(canvas, ss.str(), cv::Point(0, image_height), cv::FONT_HERSHEY_PLAIN, feature_track_font, cv::Scalar(255, 0, 0));
+    cv::imshow("Feature Track", canvas);
+    cv::waitKey(1);
+
     LOG(INFO) << "Find " << num_good_pts << " in the last image.";
     return num_good_pts;
 }
@@ -303,6 +318,14 @@ int Frontend::DetectFeatures() {
             Feature::Ptr(new Feature(current_frame_, kp)));
         cnt_detected++;
     }
+
+//     cv::Mat canvas = current_frame_->left_img_.clone();
+//     int radius = Config::Get<int>("gftt_radius");
+//     for (auto &kp : keypoints) {
+//         cv::circle(canvas, (cv::Point)kp.pt, radius, cv::Scalar(255, 0, 0), cv::FILLED);
+//     }
+//     cv::imshow("GFTT", canvas);
+//     cv::waitKey(1);
 
     LOG(INFO) << "Detect " << cnt_detected << " new features";
     return cnt_detected;
@@ -346,12 +369,40 @@ int Frontend::FindFeaturesInRight() {
             current_frame_->features_right_.push_back(nullptr);
         }
     }
+
     LOG(INFO) << "Find " << num_good_pts << " in the right image.";
+/*
+    cv::Mat lf = current_frame_->left_img_;
+    cv::Mat rt = current_frame_->right_img_;
+    cv::Mat canvas(
+        lf.rows,
+        lf.cols + rt.cols,
+        lf.type()
+    );
+    lf.copyTo(canvas(cv::Rect(0, 0, lf.cols, lf.rows)));
+    rt.copyTo(canvas(cv::Rect(lf.cols, 0, rt.cols, rt.rows)));
+    int radius = Config::Get<int>("gftt_radius");
+    for (int i = 0; i < current_frame_->features_left_.size(); i++) {
+        if (current_frame_->features_right_[i] == nullptr) {
+            continue;
+        }
+        cv::Point ptl = current_frame_->features_left_[i]->position_.pt;
+        cv::Point ptr = current_frame_->features_right_[i]->position_.pt;
+        ptr.x += lf.cols;
+        cv::circle(canvas, ptl, radius, cv::Scalar(255, 0, 0), cv::FILLED);
+        cv::circle(canvas, ptr, radius, cv::Scalar(255, 0, 0), cv::FILLED);
+//         LOG(INFO) << i << ":" << ptl.x << "," << ptl.y << "|" << ptr.x << "," << ptr.y;
+    }
+    cv::imshow("Optical Flow", canvas);
+    cv::waitKey(1);
+*/
     return num_good_pts;
 }
 
 bool Frontend::BuildInitMap() {
     std::vector<SE3> poses{camera_left_->pose(), camera_right_->pose()};
+    LOG(INFO) << "triangulate:" << poses[0].matrix() << "|" << poses[1].matrix();
+    bool triangulation_log = Config::Get<int>("triangulation_log") != 0;
     size_t cnt_init_landmarks = 0;
     for (size_t i = 0; i < current_frame_->features_left_.size(); ++i) {
         if (current_frame_->features_right_[i] == nullptr) continue;
@@ -365,7 +416,8 @@ bool Frontend::BuildInitMap() {
                      current_frame_->features_right_[i]->position_.pt.y))};
         Vec3 pworld = Vec3::Zero();
 
-        if (triangulation(poses, points, pworld) && pworld[2] > 0) {
+        bool ok = triangulation(poses, points, pworld);
+        if (ok && pworld[2] > 0) {
             auto new_map_point = MapPoint::CreateNewMappoint();
             new_map_point->SetPos(pworld);
             new_map_point->AddObservation(current_frame_->features_left_[i]);
@@ -374,6 +426,9 @@ bool Frontend::BuildInitMap() {
             current_frame_->features_right_[i]->map_point_ = new_map_point;
             cnt_init_landmarks++;
             map_->InsertMapPoint(new_map_point);
+        }
+        if (triangulation_log) {
+            LOG(INFO) << "triangulate:" << points[0] << "|" << points[1] << "|" << pworld << "|" << ok;
         }
     }
     current_frame_->SetKeyFrame();
@@ -388,6 +443,10 @@ bool Frontend::BuildInitMap() {
 
 bool Frontend::Reset() {
     // LOG(INFO) << "Reset is not implemented. ";
+    LOG(INFO) << "Doing Reset";
+    if (Config::Get<int>("reset_wait")) {
+        while ((cv::waitKey(50) & 0xFF) != ' ') {}
+    }
     status_ = FrontendStatus::INITING;
     return true;
 }
