@@ -20,12 +20,17 @@ namespace myslam {
 Frontend::Frontend() {
     gftt_ =
         cv::GFTTDetector::create(Config::Get<int>("num_features"), 0.01, 20);
-    num_features_init_ = Config::Get<int>("num_features_init");
     num_features_ = Config::Get<int>("num_features");
+    num_features_init_ = Config::Get<int>("num_features_init");
+    num_features_tracking_ = Config::Get<int>("num_features_tracking");
+    num_features_tracking_bad_ = Config::Get<int>("num_features_tracking_bad");
+    num_features_needed_for_keyframe_ = Config::Get<int>("num_features_needed_for_keyframe");
 }
 
 bool Frontend::AddFrame(myslam::Frame::Ptr frame) {
     current_frame_ = frame;
+    
+    features_cnts.emplace_back();
     
     switch (status_) {
         case FrontendStatus::INITING:
@@ -45,12 +50,15 @@ bool Frontend::AddFrame(myslam::Frame::Ptr frame) {
 }
 
 bool Frontend::Track() {
+    LOG(INFO) << "Enter Track";
     if (last_frame_) {
         current_frame_->SetPose(relative_motion_ * last_frame_->Pose());
     }
 
     int num_track_last = TrackLastFrame();
+    features_cnts.back().push_back(num_track_last);
     tracking_inliers_ = EstimateCurrentPose();
+    features_cnts.back().push_back(tracking_inliers_);
 
     if (tracking_inliers_ > num_features_tracking_) {
         // tracking good
@@ -183,6 +191,7 @@ int Frontend::EstimateCurrentPose() {
         }
     }
 
+    bool pose_estimation_log = Config::Get<int>("pose_estimation_log") != 0;
     // estimate the Pose the determine the outliers
     const double chi2_th = 5.991;
     int cnt_outlier = 0;
@@ -191,6 +200,10 @@ int Frontend::EstimateCurrentPose() {
         optimizer.initializeOptimization();
         optimizer.optimize(10);
         cnt_outlier = 0;
+        
+        if (pose_estimation_log) {
+            LOG(INFO) << "Iteration: " << iteration;
+        }
 
         // count the outliers
         for (size_t i = 0; i < edges.size(); ++i) {
@@ -202,6 +215,9 @@ int Frontend::EstimateCurrentPose() {
                 features[i]->is_outlier_ = true;
                 e->setLevel(1);
                 cnt_outlier++;
+                if (pose_estimation_log) {
+                    LOG(INFO) << "Removed: " << e->chi2();
+                }
             } else {
                 features[i]->is_outlier_ = false;
                 e->setLevel(0);
@@ -231,6 +247,7 @@ int Frontend::EstimateCurrentPose() {
 
 int Frontend::TrackLastFrame() {
     // use LK flow to estimate points in the right image
+    LOG(INFO) << "Enter TrackLastFrame";
     std::vector<cv::Point2f> kps_last, kps_current;
     for (auto &kp : last_frame_->features_left_) {
         if (kp->map_point_.lock()) {
@@ -245,6 +262,7 @@ int Frontend::TrackLastFrame() {
             kps_current.push_back(kp->position_.pt);
         }
     }
+    LOG(INFO) << "Built initial guess";
 
     std::vector<uchar> status;
     Mat error;
@@ -255,6 +273,7 @@ int Frontend::TrackLastFrame() {
                          0.01),
         cv::OPTFLOW_USE_INITIAL_FLOW);
 
+    LOG(INFO) << "Did optical flow";
     int num_good_pts = 0;
 
     for (size_t i = 0; i < status.size(); ++i) {
@@ -266,19 +285,32 @@ int Frontend::TrackLastFrame() {
             num_good_pts++;
         }
     }
+    
+    LOG(INFO) << "Associated features";
 
-    cv::Mat canvas = current_frame_->left_img_.clone();
-    int radius = Config::Get<int>("gftt_radius");
-    for (auto &ft : current_frame_->features_left_) {
-        cv::circle(canvas, ft->position_.pt, radius, cv::Scalar(255, 0, 0), cv::FILLED);
+    if (Config::Get<int>("show_feature_track")) {
+        cv::Mat canvas = current_frame_->left_img_.clone();
+        LOG(INFO) << "1";
+        int radius = Config::Get<int>("gftt_radius");
+        LOG(INFO) << "1";
+        for (auto &ft : current_frame_->features_left_) {
+            cv::circle(canvas, ft->position_.pt, radius, cv::Scalar(255, 0, 0), cv::FILLED);
+        }
+        LOG(INFO) << "1";
+        std::stringstream ss;
+        ss << num_good_pts;
+        LOG(INFO) << "1";
+        int feature_track_font = Config::Get<int>("feature_track_font");
+        int image_height = current_frame_->left_img_.size[0];
+        LOG(INFO) << "1";
+        cv::putText(canvas, ss.str(), cv::Point(0, image_height), cv::FONT_HERSHEY_PLAIN, feature_track_font, cv::Scalar(255, 0, 0));
+        LOG(INFO) << "1: " << canvas.size;
+        google::FlushLogFiles(google::INFO);
+        cv::imshow("Feature Track", canvas);
+        LOG(INFO) << "2";
+        google::FlushLogFiles(google::INFO);
+//         cv::waitKey(1);
     }
-    std::stringstream ss;
-    ss << num_good_pts;
-    int feature_track_font = Config::Get<int>("feature_track_font");
-    int image_height = current_frame_->left_img_.size[0];
-    cv::putText(canvas, ss.str(), cv::Point(0, image_height), cv::FONT_HERSHEY_PLAIN, feature_track_font, cv::Scalar(255, 0, 0));
-    cv::imshow("Feature Track", canvas);
-    cv::waitKey(1);
 
     LOG(INFO) << "Find " << num_good_pts << " in the last image.";
     return num_good_pts;
@@ -286,7 +318,9 @@ int Frontend::TrackLastFrame() {
 
 bool Frontend::StereoInit() {
     int num_features_left = DetectFeatures();
+    features_cnts.back().push_back(num_features_left);
     int num_coor_features = FindFeaturesInRight();
+    features_cnts.back().push_back(num_coor_features);
     if (num_coor_features < num_features_init_) {
         return false;
     }
@@ -401,8 +435,10 @@ int Frontend::FindFeaturesInRight() {
 
 bool Frontend::BuildInitMap() {
     std::vector<SE3> poses{camera_left_->pose(), camera_right_->pose()};
-    LOG(INFO) << "triangulate:" << poses[0].matrix() << "|" << poses[1].matrix();
     bool triangulation_log = Config::Get<int>("triangulation_log") != 0;
+    if (triangulation_log) {
+        LOG(INFO) << "triangulate:" << poses[0].matrix() << "|" << poses[1].matrix();
+    }
     size_t cnt_init_landmarks = 0;
     for (size_t i = 0; i < current_frame_->features_left_.size(); ++i) {
         if (current_frame_->features_right_[i] == nullptr) continue;
@@ -428,7 +464,7 @@ bool Frontend::BuildInitMap() {
             map_->InsertMapPoint(new_map_point);
         }
         if (triangulation_log) {
-            LOG(INFO) << "triangulate:" << points[0] << "|" << points[1] << "|" << pworld << "|" << ok;
+            LOG(INFO) << "triangulate:" << points[0].transpose() << "|" << points[1].transpose() << "|" << pworld.transpose() << "|" << ok;
         }
     }
     current_frame_->SetKeyFrame();
@@ -443,6 +479,16 @@ bool Frontend::BuildInitMap() {
 
 bool Frontend::Reset() {
     // LOG(INFO) << "Reset is not implemented. ";
+    std::stringstream ss;
+    ss << "features_cnts: ";
+    for (auto ls : features_cnts) {
+        for (int val : ls) {
+            ss << val << ",";
+        }
+        ss << '|';
+    }
+    features_cnts.clear();
+    LOG(INFO) << ss.str();
     LOG(INFO) << "Doing Reset";
     if (Config::Get<int>("reset_wait")) {
         while ((cv::waitKey(50) & 0xFF) != ' ') {}

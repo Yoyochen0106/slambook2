@@ -29,23 +29,25 @@ namespace myslam {
 #endif
 
 Dataset::Dataset(const std::string& dataset_path)
-    : dataset_path_(dataset_path), video(1) {
+    : dataset_path_(dataset_path) {
 
-        cameraMatrix = (
-            Mat_<double>(3, 3) <<
-            421.288596, 0.000000, 335.509012,
-            0.000000, 421.079122, 261.189746,
-            0.000000, 0.000000, 1.000000
-        );
-
-        distortionCoefficient = (
-            Mat_<double>(5, 1) <<
-            -0.347294, 0.090865, 0.001867, 0.001221, 0.000000
-        );
-
-    }
+}
 
 bool Dataset::Init() {
+    
+    video.open(Config::Get<int>("video_id"));
+    
+    cameraMatrix = (
+        Mat_<double>(3, 3) <<
+        421.288596, 0.000000, 335.509012,
+        0.000000, 421.079122, 261.189746,
+        0.000000, 0.000000, 1.000000
+    );
+
+    distortionCoefficient = (
+        Mat_<double>(5, 1) <<
+        -0.347294, 0.090865, 0.001867, 0.001221, 0.000000
+    );
 
     initUndistortRectifyMap(
         cameraMatrix, distortionCoefficient, Mat(), Mat(),
@@ -56,21 +58,19 @@ bool Dataset::Init() {
     K << cameraMatrix.at<double>(0, 0), cameraMatrix.at<double>(0, 1), cameraMatrix.at<double>(0, 2),
         cameraMatrix.at<double>(1, 0), cameraMatrix.at<double>(1, 1), cameraMatrix.at<double>(1, 2),
         cameraMatrix.at<double>(2, 0), cameraMatrix.at<double>(2, 1), cameraMatrix.at<double>(2, 2);
+    // The left camera
     {
         Vec3 t;
-        t << 0.061, 0, 0;
-        t = K.inverse() * t;
-        K = K * 0.5;
+        t << 0, 0, 0;
         Camera::Ptr new_camera(new Camera(K(0, 0), K(1, 1), K(0, 2), K(1, 2),
                                           t.norm(), SE3(SO3(), t)));
         cameras_.push_back(new_camera);
         LOG(INFO) << "Camera " << 0 << " extrinsics: " << t.transpose();
     }
+    // The right camera
     {
         Vec3 t;
         t << -0.061, 0, 0;
-        t = K.inverse() * t;
-        K = K * 0.5;
         Camera::Ptr new_camera(new Camera(K(0, 0), K(1, 1), K(0, 2), K(1, 2),
                                           t.norm(), SE3(SO3(), t)));
         cameras_.push_back(new_camera);
