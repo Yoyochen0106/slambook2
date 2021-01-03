@@ -137,6 +137,8 @@ class Frontend {
     cv::Ptr<cv::GFTTDetector> gftt_;  // feature detector in opencv
 
     std::vector<std::vector<int>> features_cnts;
+    cv::Mat feature_track_canvas;
+    bool first_frame = true;
 };
 
 }  // namespace myslam

@@ -25,13 +25,15 @@ Frontend::Frontend() {
     num_features_tracking_ = Config::Get<int>("num_features_tracking");
     num_features_tracking_bad_ = Config::Get<int>("num_features_tracking_bad");
     num_features_needed_for_keyframe_ = Config::Get<int>("num_features_needed_for_keyframe");
+//     feature_track_canvas.create(200, 200, CV_8UC3);
+//     feature_track_canvas = cv::Scalar(0, 0, 255);
 }
 
 bool Frontend::AddFrame(myslam::Frame::Ptr frame) {
     current_frame_ = frame;
     
     features_cnts.emplace_back();
-    
+
     switch (status_) {
         case FrontendStatus::INITING:
             StereoInit();
@@ -245,6 +247,8 @@ int Frontend::EstimateCurrentPose() {
     return features.size() - cnt_outlier;
 }
 
+cv::Mat canvas;
+
 int Frontend::TrackLastFrame() {
     // use LK flow to estimate points in the right image
     LOG(INFO) << "Enter TrackLastFrame";
@@ -289,27 +293,19 @@ int Frontend::TrackLastFrame() {
     LOG(INFO) << "Associated features";
 
     if (Config::Get<int>("show_feature_track")) {
-        cv::Mat canvas = current_frame_->left_img_.clone();
-        LOG(INFO) << "1";
+        canvas = current_frame_->left_img_.clone();
         int radius = Config::Get<int>("gftt_radius");
-        LOG(INFO) << "1";
         for (auto &ft : current_frame_->features_left_) {
             cv::circle(canvas, ft->position_.pt, radius, cv::Scalar(255, 0, 0), cv::FILLED);
         }
-        LOG(INFO) << "1";
         std::stringstream ss;
         ss << num_good_pts;
-        LOG(INFO) << "1";
         int feature_track_font = Config::Get<int>("feature_track_font");
         int image_height = current_frame_->left_img_.size[0];
-        LOG(INFO) << "1";
         cv::putText(canvas, ss.str(), cv::Point(0, image_height), cv::FONT_HERSHEY_PLAIN, feature_track_font, cv::Scalar(255, 0, 0));
-        LOG(INFO) << "1: " << canvas.size;
-        google::FlushLogFiles(google::INFO);
-        cv::imshow("Feature Track", canvas);
-        LOG(INFO) << "2";
-        google::FlushLogFiles(google::INFO);
-//         cv::waitKey(1);
+        if (!first_frame) {
+            cv::imshow("Feature Track", canvas);
+        } else { first_frame = false; }
     }
 
     LOG(INFO) << "Find " << num_good_pts << " in the last image.";
