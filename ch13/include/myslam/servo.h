@@ -4,10 +4,6 @@
 
 #include <opencv2/features2d.hpp>
 
-#include <fcntl.h>
-#include <unistd.h>
-#include "libevdev/libevdev.h"
-
 #include "myslam/common_include.h"
 #include "myslam/frame.h"
 #include "myslam/map.h"
@@ -44,15 +40,16 @@ private:
     std::thread uart_thread_;
     std::atomic<bool> uart_thread_running_;
 
-    // params
+    float dir = 0.0f;
+    float spd = 0.0f;
+    std::mutex data_mutex;
+
+    char buffer[64];
+
+    // parameters
 
     std::string event_device_filename_;
     std::string uart_device_filename_
-    int num_features_ = 200;
-    int num_features_init_ = 100;
-    int num_features_tracking_ = 50;
-    int num_features_tracking_bad_ = 20;
-    int num_features_needed_for_keyframe_ = 80;
 
 };
 

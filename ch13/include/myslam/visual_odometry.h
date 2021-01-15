@@ -48,6 +48,7 @@ class VisualOdometry {
     Backend::Ptr backend_ = nullptr;
     Map::Ptr map_ = nullptr;
     Viewer::Ptr viewer_ = nullptr;
+    Servo::Ptr servo_ = nullptr;
 
     // dataset
     Dataset::Ptr dataset_ = nullptr;

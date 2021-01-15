@@ -3,6 +3,10 @@
 
 #include <opencv2/opencv.hpp>
 
+#include <fcntl.h>
+#include <unistd.h>
+#include "libevdev/libevdev.h"
+
 #include "myslam/algorithm.h"
 #include "myslam/backend.h"
 #include "myslam/config.h"
@@ -11,6 +15,7 @@
 #include "myslam/g2o_types.h"
 #include "myslam/map.h"
 #include "myslam/viewer.h"
+#include "myslam/servo.h"
 
 static float map(float f1, float f2, float t1, float t2, float v) {
     return (v - f1) * (t2 - t1) / (f2 - f1) + t1;
@@ -21,27 +26,27 @@ namespace myslam {
 Servo::Servo() {
 }
 
-Servo::Start() {
+void Servo::Start() {
     if (started_) {
         return;
     }
     started_ = true;
 
     evdev_thread_running_.store(true);
-    evdev_thread_ = std::thread(&ThreadLoop_evdev);
+    evdev_thread_ = thread(&ThreadLoop_evdev);
 
     uart_thread_running_.store(true);
     uart_thread_ = std::thread(&ThreadLoop_uart);
 }
 
-Servo::Stop() {
+void Servo::Stop() {
     evdev_thread_running_.store(false);
     uart_thread_running_.store(false);
     evdev_thread_.join();
     uart_thread_.join();
 }
 
-Servo::ThreadLoop_evdev() {
+void Servo::ThreadLoop_evdev() {
 
     // Return code
     int rc;
@@ -63,17 +68,19 @@ Servo::ThreadLoop_evdev() {
                     // Top -> Bottom
                     float spd_new = map(0.0f, 255.0f, 1.0f, -1.0f, (float)ev.value);
                     {
-                        lock_guard<mutex> lock_cmd(cmd_mutex);
+                        std::lock_guard<std::mutex> lock_data(data_mutex);
                         spd = spd_new;
                     }
+                    LOG(INFO) << "servo evdev: spd=" << spd_new;
                 }
                 else if (ev.type == EV_ABS && ev.code == ABS_Z) {
                     // Left -> Right
                     float dir_new = map(0.0f, 255.0f, -1.0f, 1.0f, (float)ev.value);
                     {
-                        lock_guard<mutex> lock_cmd(cmd_mutex);
+                        std::lock_guard<std::mutex> lock_data(data_mutex);
                         dir = dir_new;
                     }
+                    LOG(INFO) << "evdev: dir=" << dir_new;
                 }
             }
         } else {
@@ -86,7 +93,7 @@ Servo::ThreadLoop_evdev() {
     close(js_fd);
 }
 
-Servo::ThreadLoop_uart() {
+void Servo::ThreadLoop_uart() {
 
     int uart_fd = open(uart_device_file_name_, O_RDWR);
 
@@ -96,21 +103,21 @@ Servo::ThreadLoop_uart() {
 
         long wait_time = next_send - get_now().count();
         if (wait_time > 0) {
-            this_thread::sleep_for(ms(wait_time));
+            std::this_thread::sleep_for(std::milliseconds(wait_time));
         }
         
-        if (!uartIOThread_running) {
+        if (!uart_thread_running_.load()) {
             return;
         }
 
         float dir_tmp;
         float spd_tmp;
         {
-            lock_guard<mutex> lock_cmd(cmd_mutex);
+            std::lock_guard<std::mutex> lock_data(data_mutex);
             dir_tmp = dir;
             spd_tmp = spd;
         }
-        ms now = get_now();
+        std::milliseconds now = get_now();
         int dir_code = (int)map(-1.0f, 1.0f, -100.0f, 100.0f, dir_tmp);
         int spd_code = (int)map(-1.0f, 1.0f, -100.0f, 100.0f, spd_tmp);
         dir_code += 0x80;
@@ -119,7 +126,7 @@ Servo::ThreadLoop_uart() {
         write(uart_fd, buffer, length);
 
         buffer[length-1] = '\0';
-        printf("sent: %s, %d, %ld, %f, %f\n", buffer, length, now.count(), dir_tmp, spd_tmp);
+        LOG(INFO) << "servo uart: %s, %d, %ld, %f, %f\n", buffer, length, now.count(), dir_tmp, spd_tmp);
 
         next_send += 50;
 
