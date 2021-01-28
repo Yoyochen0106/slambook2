@@ -11,11 +11,16 @@
 #include "myslam/backend.h"
 #include "myslam/config.h"
 #include "myslam/feature.h"
-#include "myslam/joystick.h"
 #include "myslam/g2o_types.h"
 #include "myslam/map.h"
 #include "myslam/viewer.h"
 #include "myslam/servo.h"
+
+typedef std::chrono::milliseconds ms;
+
+ms get_now() {
+    return std::chrono::duration_cast<ms>(std::chrono::system_clock::now().time_since_epoch());
+}
 
 static float map(float f1, float f2, float t1, float t2, float v) {
     return (v - f1) * (t2 - t1) / (f2 - f1) + t1;
@@ -33,10 +38,10 @@ void Servo::Start() {
     started_ = true;
 
     evdev_thread_running_.store(true);
-    evdev_thread_ = thread(&ThreadLoop_evdev);
+    evdev_thread_ = std::thread(std::bind(&Servo::ThreadLoop_evdev, this));
 
     uart_thread_running_.store(true);
-    uart_thread_ = std::thread(&ThreadLoop_uart);
+    uart_thread_ = std::thread(std::bind(&Servo::ThreadLoop_uart, this));
 }
 
 void Servo::Stop() {
@@ -53,7 +58,7 @@ void Servo::ThreadLoop_evdev() {
     int js_fd;
     struct libevdev *dev;
 
-    js_fd = open(event_device_file_name_, O_RDONLY | O_NONBLOCK);
+    js_fd = open(event_device_file_name_.c_str(), O_RDONLY | O_NONBLOCK);
 
     dev = libevdev_new();
     rc = libevdev_set_fd(dev, js_fd);
@@ -84,7 +89,7 @@ void Servo::ThreadLoop_evdev() {
                 }
             }
         } else {
-            std::chrono::milliseconds timespan(10);
+            ms timespan(10);
             std::this_thread::sleep_for(timespan);
         }
     }
@@ -95,7 +100,9 @@ void Servo::ThreadLoop_evdev() {
 
 void Servo::ThreadLoop_uart() {
 
-    int uart_fd = open(uart_device_file_name_, O_RDWR);
+    char log_buffer[128];
+
+    int uart_fd = open(uart_device_file_name_.c_str(), O_RDWR);
 
     long next_send = get_now().count();
 
@@ -103,7 +110,7 @@ void Servo::ThreadLoop_uart() {
 
         long wait_time = next_send - get_now().count();
         if (wait_time > 0) {
-            std::this_thread::sleep_for(std::milliseconds(wait_time));
+            std::this_thread::sleep_for(ms(wait_time));
         }
         
         if (!uart_thread_running_.load()) {
@@ -117,16 +124,24 @@ void Servo::ThreadLoop_uart() {
             dir_tmp = dir;
             spd_tmp = spd;
         }
-        std::milliseconds now = get_now();
+        ms now = get_now();
         int dir_code = (int)map(-1.0f, 1.0f, -100.0f, 100.0f, dir_tmp);
         int spd_code = (int)map(-1.0f, 1.0f, -100.0f, 100.0f, spd_tmp);
         dir_code += 0x80;
         spd_code += 0x80;
         int length = sprintf(buffer, "$%02X%02X\n", dir_code, spd_code);
-        write(uart_fd, buffer, length);
+//        write(uart_fd, buffer, length);
 
         buffer[length-1] = '\0';
-        LOG(INFO) << "servo uart: %s, %d, %ld, %f, %f\n", buffer, length, now.count(), dir_tmp, spd_tmp);
+        int log_length = snprintf(
+            log_buffer, 
+            sizeof(log_buffer) / sizeof(log_buffer[0]),
+            "servo uart: %s, %d, %ld, %f, %f\n", buffer, length, now.count(), dir_tmp, spd_tmp);
+        if (log_length < 0) {
+            LOG(INFO) << "Servo Uart: log_buffer too small";
+        } else {
+            LOG(INFO) << log_buffer;
+        }
 
         next_send += 50;
 

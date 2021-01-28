@@ -22,8 +22,8 @@ public:
     void Stop();
 
     void SetFileNames(std::string event_device, std::string uart_device) {
-        event_device_filename_ = event_device;
-        uart_device_filename_ = uart_device;
+        event_device_file_name_ = event_device;
+        uart_device_file_name_ = uart_device;
     }
 
 private:
@@ -48,8 +48,8 @@ private:
 
     // parameters
 
-    std::string event_device_filename_;
-    std::string uart_device_filename_
+    std::string event_device_file_name_;
+    std::string uart_device_file_name_;
 
 };
 

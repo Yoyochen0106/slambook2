@@ -10,6 +10,8 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
+include( FindPkgConfig )
+
 ############### dependencies ######################
 # Eigen
 include_directories("/usr/include/eigen3")
@@ -46,6 +48,9 @@ include_directories(${GFLAGS_INCLUDE_DIRS})
 find_package(CSparse REQUIRED)
 include_directories(${CSPARSE_INCLUDE_DIR})
 
+pkg_search_module( EVDEV REQUIRED libevdev )
+include_directories( ${EVDEV_INCLUDE_DIRS} )
+
 link_directories( "/usr/local/lib" )
 
 set(THIRD_PARTY_LIBS
@@ -58,6 +63,7 @@ set(THIRD_PARTY_LIBS
         ${GFLAGS_LIBRARIES}
         pthread
         ${CSPARSE_LIBRARY}
+        ${EVDEV_LIBRARIES}
         )
 
 enable_testing()

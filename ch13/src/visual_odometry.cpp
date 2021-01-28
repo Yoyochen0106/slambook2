@@ -25,6 +25,7 @@ bool VisualOdometry::Init() {
     backend_ = Backend::Ptr(new Backend);
     map_ = Map::Ptr(new Map);
     viewer_ = Viewer::Ptr(new Viewer);
+    servo_ = Servo::Ptr(new Servo);
 
     frontend_->SetBackend(backend_);
     frontend_->SetMap(map_);
@@ -35,6 +36,8 @@ bool VisualOdometry::Init() {
     backend_->SetCameras(dataset_->GetCamera(0), dataset_->GetCamera(1));
 
     viewer_->SetMap(map_);
+    
+    servo_->Start();
 
     return true;
 }
