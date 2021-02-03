@@ -24,6 +24,7 @@ public:
     void SetFileNames(std::string event_device, std::string uart_device) {
         event_device_file_name_ = event_device;
         uart_device_file_name_ = uart_device;
+        LOG(INFO) << "Servo::SetFileNames(): event_device=" << event_device << ",uart_device=" << uart_device;
     }
 
 private:

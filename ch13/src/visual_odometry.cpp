@@ -26,6 +26,11 @@ bool VisualOdometry::Init() {
     map_ = Map::Ptr(new Map);
     viewer_ = Viewer::Ptr(new Viewer);
     servo_ = Servo::Ptr(new Servo);
+    
+    servo_->SetFileNames(
+        Config::Get<std::string>("event_device_file_name"),
+        Config::Get<std::string>("uart_device_file_name")
+    );
 
     frontend_->SetBackend(backend_);
     frontend_->SetMap(map_);

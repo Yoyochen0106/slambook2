@@ -52,13 +52,18 @@ void Servo::Stop() {
 }
 
 void Servo::ThreadLoop_evdev() {
-
-    // Return code
+    
     int rc;
+
     int js_fd;
     struct libevdev *dev;
 
     js_fd = open(event_device_file_name_.c_str(), O_RDONLY | O_NONBLOCK);
+    
+    if (js_fd < 0) {
+        LOG(FATAL) << "Open joystick event file failed (" << event_device_file_name_ << ")";
+        LOG(INFO) << "Something after fatal";
+    }
 
     dev = libevdev_new();
     rc = libevdev_set_fd(dev, js_fd);
@@ -76,7 +81,7 @@ void Servo::ThreadLoop_evdev() {
                         std::lock_guard<std::mutex> lock_data(data_mutex);
                         spd = spd_new;
                     }
-                    LOG(INFO) << "servo evdev: spd=" << spd_new;
+                    LOG(INFO) << "Servo evdev: spd=" << spd_new;
                 }
                 else if (ev.type == EV_ABS && ev.code == ABS_Z) {
                     // Left -> Right
@@ -85,7 +90,7 @@ void Servo::ThreadLoop_evdev() {
                         std::lock_guard<std::mutex> lock_data(data_mutex);
                         dir = dir_new;
                     }
-                    LOG(INFO) << "evdev: dir=" << dir_new;
+                    LOG(INFO) << "Servo evdev: dir=" << dir_new;
                 }
             }
         } else {
@@ -98,6 +103,10 @@ void Servo::ThreadLoop_evdev() {
     close(js_fd);
 }
 
+static float calcLpfGain(float dt, float cutoff_freq) {
+    return (2.0f * M_PI * dt * cutoff_freq) / (2.0f * M_PI * dt * cutoff_freq + 1);
+}
+
 void Servo::ThreadLoop_uart() {
 
     char log_buffer[128];
@@ -105,6 +114,16 @@ void Servo::ThreadLoop_uart() {
     int uart_fd = open(uart_device_file_name_.c_str(), O_RDWR);
 
     long next_send = get_now().count();
+
+    float dirFilter_gain = calcLpfGain(0.050f, 5.0f);
+    float spdFilter_gain = calcLpfGain(0.050f, 5.0f);
+    
+    float dirFilter_int;
+    float spdFilter_int;    
+
+    long waitTime = 500;
+    long unlockTime = 0;
+    int lastSign = 1;
 
     while (evdev_thread_running_.load()) {
 
@@ -117,6 +136,8 @@ void Servo::ThreadLoop_uart() {
             return;
         }
 
+        ms now = get_now();
+
         float dir_tmp;
         float spd_tmp;
         {
@@ -124,21 +145,37 @@ void Servo::ThreadLoop_uart() {
             dir_tmp = dir;
             spd_tmp = spd;
         }
-        ms now = get_now();
+        
+        // Limit direction switching of speed signal
+        if ((fabs(spd_tmp) >= 0.02f) && ((spd_tmp * lastSign) < 0)) {
+            unlockTime = now.count() + waitTime;
+
+            lastSign = (spd_tmp > 0) ? 1 : -1;
+        }
+        
+        if (now.count() < unlockTime) {
+            spd_tmp = 0.0f;
+        }
+
+        // LPF
+        dirFilter_int = dirFilter_gain * dir_tmp + (1 - dirFilter_gain) * dirFilter_int;
+        spdFilter_int = spdFilter_gain * spd_tmp + (1 - spdFilter_gain) * spdFilter_int;
+
         int dir_code = (int)map(-1.0f, 1.0f, -100.0f, 100.0f, dir_tmp);
         int spd_code = (int)map(-1.0f, 1.0f, -100.0f, 100.0f, spd_tmp);
         dir_code += 0x80;
         spd_code += 0x80;
         int length = sprintf(buffer, "$%02X%02X\n", dir_code, spd_code);
-//        write(uart_fd, buffer, length);
+        write(uart_fd, buffer, length);
 
         buffer[length-1] = '\0';
         int log_length = snprintf(
             log_buffer, 
             sizeof(log_buffer) / sizeof(log_buffer[0]),
-            "servo uart: %s, %d, %ld, %f, %f\n", buffer, length, now.count(), dir_tmp, spd_tmp);
+            "Servo uart: %s, %d, %ld, %f, %f\n", buffer, length, now.count(), dir_tmp, spd_tmp);
+        log_buffer[log_length] = '\0';
         if (log_length < 0) {
-            LOG(INFO) << "Servo Uart: log_buffer too small";
+            LOG(INFO) << "Servo uart: log_buffer too small";
         } else {
             LOG(INFO) << log_buffer;
         }
