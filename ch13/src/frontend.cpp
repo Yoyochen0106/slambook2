@@ -58,9 +58,9 @@ bool Frontend::Track() {
     }
 
     int num_track_last = TrackLastFrame();
-    features_cnts.back().push_back(num_track_last);
+    LOG(INFO) << "TrackLastFrame returns: " << num_track_last;
     tracking_inliers_ = EstimateCurrentPose();
-    features_cnts.back().push_back(tracking_inliers_);
+    LOG(INFO) << "EstimateCurrentPose returns: " << tracking_inliers_;
 
     if (tracking_inliers_ > num_features_tracking_) {
         // tracking good
@@ -314,9 +314,10 @@ int Frontend::TrackLastFrame() {
 
 bool Frontend::StereoInit() {
     int num_features_left = DetectFeatures();
-    features_cnts.back().push_back(num_features_left);
+    LOG(INFO) << "DetectFeatures returns: " << num_features_left;
     int num_coor_features = FindFeaturesInRight();
-    features_cnts.back().push_back(num_coor_features);
+    LOG(INFO) << "FindFeaturesInRight returns: " << num_coor_features;
+
     if (num_coor_features < num_features_init_) {
         return false;
     }
@@ -475,6 +476,7 @@ bool Frontend::BuildInitMap() {
 
 bool Frontend::Reset() {
     // LOG(INFO) << "Reset is not implemented. ";
+    current_frame_->SetPose(relative_motion_ * last_frame_->Pose());
     std::stringstream ss;
     ss << "features_cnts: ";
     for (auto ls : features_cnts) {

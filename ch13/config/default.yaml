@@ -19,10 +19,10 @@ num_features_needed_for_keyframe: 80
 video_id: 1
 
 gftt_radius: 2
-triangulation_log: 1
+triangulation_log: 0
 pose_estimation_log: 0
 isw_block: 1
 frame_wait: 0
-reset_wait: 1
+reset_wait: 0
 feature_track_font: 5
 show_feature_track: 1
