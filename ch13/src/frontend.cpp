@@ -58,9 +58,7 @@ bool Frontend::Track() {
     }
 
     int num_track_last = TrackLastFrame();
-    LOG(INFO) << "TrackLastFrame returns: " << num_track_last;
     tracking_inliers_ = EstimateCurrentPose();
-    LOG(INFO) << "EstimateCurrentPose returns: " << tracking_inliers_;
 
     if (tracking_inliers_ > num_features_tracking_) {
         // tracking good
@@ -85,6 +83,7 @@ bool Frontend::InsertKeyframe() {
         // still have enough features, don't insert keyframe
         return false;
     }
+    LOG(INFO) << "InsertKeyframe: tracking_inliers " << tracking_inliers_ << " < needed " << num_features_needed_for_keyframe_;
     // current frame is a new keyframe
     current_frame_->SetKeyFrame();
     map_->InsertKeyFrame(current_frame_);
@@ -231,7 +230,7 @@ int Frontend::EstimateCurrentPose() {
         }
     }
 
-    LOG(INFO) << "Outlier/Inlier in pose estimating: " << cnt_outlier << "/"
+    LOG(INFO) << "EstimateCurrentPose: Outlier/Inlier in pose estimating: " << cnt_outlier << "/"
               << features.size() - cnt_outlier;
     // Set pose and outlier
     current_frame_->SetPose(vertex_pose->estimate());
@@ -308,15 +307,13 @@ int Frontend::TrackLastFrame() {
         } else { first_frame = false; }
     }
 
-    LOG(INFO) << "Find " << num_good_pts << " in the last image.";
+    LOG(INFO) << "TrackLastFrame: Find " << num_good_pts << " in the last image.";
     return num_good_pts;
 }
 
 bool Frontend::StereoInit() {
     int num_features_left = DetectFeatures();
-    LOG(INFO) << "DetectFeatures returns: " << num_features_left;
     int num_coor_features = FindFeaturesInRight();
-    LOG(INFO) << "FindFeaturesInRight returns: " << num_coor_features;
 
     if (num_coor_features < num_features_init_) {
         return false;
@@ -358,7 +355,7 @@ int Frontend::DetectFeatures() {
 //     cv::imshow("GFTT", canvas);
 //     cv::waitKey(1);
 
-    LOG(INFO) << "Detect " << cnt_detected << " new features";
+    LOG(INFO) << "DetectFeatures: Detect " << cnt_detected << " new features";
     return cnt_detected;
 }
 
@@ -401,7 +398,7 @@ int Frontend::FindFeaturesInRight() {
         }
     }
 
-    LOG(INFO) << "Find " << num_good_pts << " in the right image.";
+    LOG(INFO) << "FindFeaturesInRight: Find " << num_good_pts << " in the right image.";
 /*
     cv::Mat lf = current_frame_->left_img_;
     cv::Mat rt = current_frame_->right_img_;
