@@ -306,7 +306,7 @@ int Frontend::TrackLastFrame() {
 
     if (Config::Get<int>("show_feature_track")) {
         cv::Mat canvas;
-        cv::cvtColor(current_frame_->left_img_, canvas, COLOR_GRAY2BGR);
+        cv::cvtColor(current_frame_->left_img_, canvas, cv::COLOR_GRAY2BGR);
         int radius = Config::Get<int>("gftt_radius");
         for (auto &ft : current_frame_->features_left_) {
             if (ft->is_outlier_) {
@@ -330,6 +330,7 @@ int Frontend::TrackLastFrame() {
 }
 
 bool Frontend::StereoInit() {
+    current_frame_->SetPose(last_frame_->Pose());
     int num_features_left = DetectFeatures();
     int num_coor_features = FindFeaturesInRight();
 
@@ -491,7 +492,7 @@ bool Frontend::BuildInitMap() {
 
 bool Frontend::Reset() {
     // LOG(INFO) << "Reset is not implemented. ";
-    current_frame_->SetPose(relative_motion_ * last_frame_->Pose());
+    current_frame_->SetPose(last_frame_->Pose());
     std::stringstream ss;
     ss << "features_cnts: ";
     for (auto ls : features_cnts) {
