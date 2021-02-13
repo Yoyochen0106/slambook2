@@ -53,20 +53,15 @@ void VisualOdometry::Run() {
     LOG(INFO) << "VO exit";
 }
 
-int cnt = 0;
-
 bool VisualOdometry::Step() {
     Frame::Ptr new_frame = dataset_->NextFrame();
     if (new_frame == nullptr) return false;
 
     auto t1 = std::chrono::steady_clock::now();
+    FrontendStatus status_before = frontend_->GetStatus();
     bool success = frontend_->AddFrame(new_frame);
-    if (frontend_->GetStatus() == FrontendStatus::LOST) {
-        cnt = 0;
-    } else {
-        cnt += 1;
-    }
-    LOG(INFO) << "Frame status count: " << cnt;
+    FrontendStatus status_after = frontend_->GetStatus();
+    LOG(INFO) << "Frame status: " << FrontendStatus;
     auto t2 = std::chrono::steady_clock::now();
     auto time_used =
         std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);

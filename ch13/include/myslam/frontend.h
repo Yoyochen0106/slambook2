@@ -15,6 +15,8 @@ class Viewer;
 
 enum class FrontendStatus { INITING, TRACKING_GOOD, TRACKING_BAD, LOST };
 
+std::string to_string(FrontendStatus status);
+
 /**
  * 前端
  * 估计当前帧Pose，在满足关键帧条件时向地图加入关键帧并触发优化
@@ -30,7 +32,7 @@ class Frontend {
     bool AddFrame(Frame::Ptr frame);
 
     /// Set函数
-    void SetMap(Map::Ptr map) { map_ = map; }
+    void SetMap(Map::Ptr map) { map_ = map; to_string}
 
     void SetBackend(std::shared_ptr<Backend> backend) { backend_ = backend; }
 

@@ -17,6 +17,21 @@
 
 namespace myslam {
 
+std::string to_string(FrontendStatus status) {
+    switch (status) {
+    case FrontendStatus::INITING:
+        return std::string("INITING");
+    case FrontendStatus::TRACKING_GOOD:
+        return std::string("TRACKING_GOOD");
+    case FrontendStatus::TRACKING_BAD:
+        return std::string("TRACKING_BAD");
+    case FrontendStatus::LOST:
+        return std::string("LOST");
+    default:
+        return std::string("Unknown");
+    }
+}
+
 Frontend::Frontend() {
     gftt_ =
         cv::GFTTDetector::create(Config::Get<int>("num_features"), 0.01, 20);
@@ -246,8 +261,6 @@ int Frontend::EstimateCurrentPose() {
     return features.size() - cnt_outlier;
 }
 
-cv::Mat canvas;
-
 int Frontend::TrackLastFrame() {
     // use LK flow to estimate points in the right image
     LOG(INFO) << "Enter TrackLastFrame";
@@ -292,10 +305,15 @@ int Frontend::TrackLastFrame() {
     LOG(INFO) << "Associated features";
 
     if (Config::Get<int>("show_feature_track")) {
-        canvas = current_frame_->left_img_.clone();
+        cv::Mat canvas;
+        cv::cvtColor(current_frame_->left_img_, canvas, COLOR_GRAY2BGR);
         int radius = Config::Get<int>("gftt_radius");
         for (auto &ft : current_frame_->features_left_) {
-            cv::circle(canvas, ft->position_.pt, radius, cv::Scalar(255, 0, 0), cv::FILLED);
+            if (ft->is_outlier_) {
+                cv::circle(canvas, ft->position_.pt, radius, cv::Scalar(0, 0, 255), cv::FILLED);
+            } else {
+                cv::circle(canvas, ft->position_.pt, radius, cv::Scalar(0, 255, 0), cv::FILLED);
+            }
         }
         std::stringstream ss;
         ss << num_good_pts;
