@@ -32,7 +32,7 @@ class Frontend {
     bool AddFrame(Frame::Ptr frame);
 
     /// Set函数
-    void SetMap(Map::Ptr map) { map_ = map; to_string}
+    void SetMap(Map::Ptr map) { map_ = map; }
 
     void SetBackend(std::shared_ptr<Backend> backend) { backend_ = backend; }
 

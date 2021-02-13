@@ -61,7 +61,7 @@ bool VisualOdometry::Step() {
     FrontendStatus status_before = frontend_->GetStatus();
     bool success = frontend_->AddFrame(new_frame);
     FrontendStatus status_after = frontend_->GetStatus();
-    LOG(INFO) << "Frame status: " << FrontendStatus;
+    LOG(INFO) << "Frame status: " << to_string(status_before) << " -> " << to_string(status_after);
     auto t2 = std::chrono::steady_clock::now();
     auto time_used =
         std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
