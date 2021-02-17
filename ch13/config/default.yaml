@@ -26,3 +26,8 @@ frame_wait: 0
 reset_wait: 0
 feature_track_font: 5
 show_feature_track: 1
+
+# Parameters of Viewer
+# in milliseconds
+waitKey_time: 10
+sleep_time: 5
