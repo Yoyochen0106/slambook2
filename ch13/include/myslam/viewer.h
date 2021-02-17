@@ -28,6 +28,8 @@ class Viewer {
 
     void Close();
 
+    void PostImshow(std::string title, cv::Mat image);
+
     // 增加一个当前帧
     void AddCurrentFrame(Frame::Ptr current_frame);
 
@@ -35,6 +37,9 @@ class Viewer {
     void UpdateMap();
 
    private:
+
+    typedef std::pair<std::string, cv::Mat> PostImshowItemType;
+
     void ThreadLoop();
 
     void DrawFrame(Frame::Ptr frame, const float* color);
@@ -57,6 +62,8 @@ class Viewer {
     bool map_updated_ = false;
 
     std::mutex viewer_data_mutex_;
+
+    std::vector<PostImshowItemType> postImshows_; 
 };
 }  // namespace myslam
 

@@ -20,6 +20,11 @@ void Viewer::Close() {
     viewer_thread_.join();
 }
 
+void Viewer::PostImshow(std::string title, cv::Mat image) {
+    std::unique_lock<std::mutex> lck(viewer_data_mutex_);
+    postImshows_.push_back(std::make_pair(title, image));
+}
+
 void Viewer::AddCurrentFrame(Frame::Ptr current_frame) {
     std::unique_lock<std::mutex> lck(viewer_data_mutex_);
     current_frame_ = current_frame;
@@ -69,6 +74,13 @@ void Viewer::ThreadLoop() {
 
             cv::Mat img = PlotFrameImage();
             cv::imshow("image", img);
+
+            std::vector<PostImshowItemType> imshows;
+            imshows.swap(postImshows_);
+            for (PostImshowItemType item : imshows) {
+                cv::imshow(item.first, item.second);
+            }
+
             cv::waitKey(waitKey_time);
         }
 
