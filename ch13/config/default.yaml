@@ -29,5 +29,5 @@ show_feature_track: 1
 
 # Parameters of Viewer
 # in milliseconds
-waitKey_time: 10
+waitKey_time: 100
 sleep_time: 5
