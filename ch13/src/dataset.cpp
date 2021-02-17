@@ -11,23 +11,6 @@ using namespace cv;
 
 namespace myslam {
 
-#if 1
-    void imshowAndWait(string title, Mat img) {
-        imshow("imshowAndWait: " + title, img);
-        if (Config::Get<int>("isw_block") != 0) {
-            while (1) {
-                if (waitKey(50) != -1) {
-                    break;
-                }
-            }
-        } else {
-            waitKey(1);
-        }
-    }
-#else
-    void imshowAndWait(Mat img) {}
-#endif
-
 Dataset::Dataset(const std::string& dataset_path)
     : dataset_path_(dataset_path) {
 
@@ -130,10 +113,6 @@ Frame::Ptr Dataset::NextFrame() {
 //     imwrite("out/orig.png", image);
 //     imwrite("out/lf.png", img_left);
 //     imwrite("out/rt.png", img_right);
-
-    if (Config::Get<int>("frame_wait") != 0) {
-        imshowAndWait("src", image);
-    }
 
     auto new_frame = Frame::CreateFrame();
     new_frame->left_img_ = img_left;
