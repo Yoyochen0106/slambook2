@@ -4,6 +4,7 @@
 #include "myslam/viewer.h"
 #include "myslam/feature.h"
 #include "myslam/frame.h"
+#include "myslam/config.h"
 
 #include <pangolin/pangolin.h>
 #include <opencv2/opencv.hpp>
@@ -51,6 +52,11 @@ void Viewer::ThreadLoop() {
     const float blue[3] = {0, 0, 1};
     const float green[3] = {0, 1, 0};
 
+    int waitKey_time = Config::Get<int>("waitKey_time");
+    int sleep_time = Config::Get<int>("sleep_time");
+
+    LOG(INFO) << "waitKey_time=" << waitKey_time << "|sleep_time=" << sleep_time;
+
     while (!pangolin::ShouldQuit() && viewer_running_) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -63,7 +69,7 @@ void Viewer::ThreadLoop() {
 
             cv::Mat img = PlotFrameImage();
             cv::imshow("image", img);
-            cv::waitKey(1);
+            cv::waitKey(waitKey_time);
         }
 
         if (map_) {
@@ -71,7 +77,7 @@ void Viewer::ThreadLoop() {
         }
 
         pangolin::FinishFrame();
-        usleep(5000);
+        usleep(1000 * sleep_time);
     }
 
     LOG(INFO) << "Stop viewer";
