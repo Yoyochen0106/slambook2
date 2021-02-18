@@ -69,7 +69,9 @@ void Viewer::ThreadLoop() {
 
             cv::Mat img = PlotFrameImage();
             cv::imshow("image", img);
+            LOG(INFO) << "bef waitKey";
             cv::waitKey(waitKey_time);
+            LOG(INFO) << "aft waitKey";
         }
 
         if (map_) {

@@ -321,7 +321,9 @@ int Frontend::TrackLastFrame() {
         int image_height = current_frame_->left_img_.size[0];
         cv::putText(canvas, ss.str(), cv::Point(0, image_height), cv::FONT_HERSHEY_PLAIN, feature_track_font, cv::Scalar(255, 0, 0));
         if (!first_frame) {
+            LOG(INFO) << "bef imshow";
             cv::imshow("Feature Track", canvas);
+            LOG(INFO) << "aft imshow";
         } else { first_frame = false; }
     }
 
