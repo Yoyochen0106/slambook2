@@ -34,6 +34,11 @@ class Viewer {
     // 更新地图
     void UpdateMap();
 
+    void Dbg_Notify() {
+        std::unique_lock<std::mutex>(viewer_data_mutex_);
+        dbg_cond_.notify_all();
+    }
+
    private:
     void ThreadLoop();
 
@@ -57,6 +62,8 @@ class Viewer {
     bool map_updated_ = false;
 
     std::mutex viewer_data_mutex_;
+
+    std::condition_variable dbg_cond_;
 };
 }  // namespace myslam
 
