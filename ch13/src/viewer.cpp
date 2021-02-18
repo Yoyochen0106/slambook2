@@ -69,8 +69,8 @@ void Viewer::ThreadLoop() {
 
             cv::Mat img = PlotFrameImage();
 
-            dbg_cond_.wait(lock);
             cv::imshow("image", img);
+            dbg_cond_.wait(lock);
             cv::waitKey(waitKey_time);
         }
 

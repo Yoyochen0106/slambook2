@@ -322,6 +322,7 @@ int Frontend::TrackLastFrame() {
         cv::putText(canvas, ss.str(), cv::Point(0, image_height), cv::FONT_HERSHEY_PLAIN, feature_track_font, cv::Scalar(255, 0, 0));
         if (!first_frame) {
             viewer_->Dbg_Notify();
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
             cv::imshow("Feature Track", canvas);
         } else { first_frame = false; }
     }
