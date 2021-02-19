@@ -209,7 +209,8 @@ int Frontend::EstimateCurrentPose() {
 
     bool pose_estimation_log = Config::Get<int>("pose_estimation_log") != 0;
     // estimate the Pose the determine the outliers
-    const double chi2_th = 5.991;
+    // The original is 5.991;
+    const double chi2_th = Config::Get<double>("chi2_th");
     int cnt_outlier = 0;
     for (int iteration = 0; iteration < 4; ++iteration) {
         vertex_pose->setEstimate(current_frame_->Pose());

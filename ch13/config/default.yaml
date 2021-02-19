@@ -16,6 +16,8 @@ num_features_tracking: 10
 num_features_tracking_bad: 5
 num_features_needed_for_keyframe: 80
 
+chi2_th: 5.991
+
 video_id: 1
 
 gftt_radius: 2
