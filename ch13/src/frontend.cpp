@@ -304,27 +304,6 @@ int Frontend::TrackLastFrame() {
     
     LOG(INFO) << "Associated features";
 
-    if (Config::Get<int>("show_feature_track")) {
-        cv::Mat canvas;
-        cv::cvtColor(current_frame_->left_img_, canvas, cv::COLOR_GRAY2BGR);
-        int radius = Config::Get<int>("gftt_radius");
-        for (auto &ft : current_frame_->features_left_) {
-            if (ft->is_outlier_) {
-                cv::circle(canvas, ft->position_.pt, radius, cv::Scalar(0, 0, 255), cv::FILLED);
-            } else {
-                cv::circle(canvas, ft->position_.pt, radius, cv::Scalar(0, 255, 0), cv::FILLED);
-            }
-        }
-        std::stringstream ss;
-        ss << num_good_pts;
-        int feature_track_font = Config::Get<int>("feature_track_font");
-        int image_height = current_frame_->left_img_.size[0];
-        cv::putText(canvas, ss.str(), cv::Point(0, image_height), cv::FONT_HERSHEY_PLAIN, feature_track_font, cv::Scalar(255, 0, 0));
-        if (!first_frame) {
-            viewer_->PostImshow("Feature Track", canvas);
-        } else { first_frame = false; }
-    }
-
     LOG(INFO) << "TrackLastFrame: Find " << num_good_pts << " in the last image.";
     return num_good_pts;
 }

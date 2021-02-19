@@ -99,12 +99,38 @@ cv::Mat Viewer::PlotFrameImage() {
     cv::Mat img_out;
     cv::cvtColor(current_frame_->left_img_, img_out, CV_GRAY2BGR);
     for (size_t i = 0; i < current_frame_->features_left_.size(); ++i) {
-        if (current_frame_->features_left_[i]->map_point_.lock()) {
-            auto feat = current_frame_->features_left_[i];
-            cv::circle(img_out, feat->position_.pt, 2, cv::Scalar(0, 250, 0),
-                       2);
+        auto feat = current_frame_->features_left_[i];
+        if (feat->map_point_.lock()) {
+            cv::circle(img_out, feat->position_.pt, 2, cv::Scalar(0, 250, 0), 2);
+        } else {
+            cv::circle(img_out, feat->position_.pt, 2, cv::Scalar(0, 0, 192), 2);
         }
     }
+
+    if (Config::Get<int>("show_text")) {
+
+        double feature_track_font = Config::Get<double>("feature_track_font");
+        int y = img_out.size[0];
+
+        std::stringstream ss;
+
+        ss.str(std::string());
+        ss << current_frame_->features_left_.size();
+        cv::putText(img_out, ss.str(), cv::Point(0, y), cv::FONT_HERSHEY_PLAIN, feature_track_font, cv::Scalar(255, 0, 0));
+        y -= Config::Get<int>("text_gap");
+
+        ss.str(std::string());
+        ss << map_->GetAllMapPoints().size();
+        cv::putText(img_out, ss.str(), cv::Point(0, y), cv::FONT_HERSHEY_PLAIN, feature_track_font, cv::Scalar(255, 0, 0));
+        y -= Config::Get<int>("text_gap");
+
+        ss.str(std::string());
+        ss << map_->GetActiveMapPoints().size();
+        cv::putText(img_out, ss.str(), cv::Point(0, y), cv::FONT_HERSHEY_PLAIN, feature_track_font, cv::Scalar(255, 0, 0));
+        y -= Config::Get<int>("text_gap");
+
+    }
+
     return img_out;
 }
 

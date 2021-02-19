@@ -23,8 +23,10 @@ triangulation_log: 0
 pose_estimation_log: 0
 isw_block: 1
 reset_wait: 0
-feature_track_font: 5
-show_feature_track: 1
+
+feature_track_font: 2.5
+show_text: 1
+text_gap: 45
 
 # Parameters of Viewer
 # in milliseconds
