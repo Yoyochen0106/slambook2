@@ -16,9 +16,14 @@ num_features_tracking: 10
 num_features_tracking_bad: 5
 num_features_needed_for_keyframe: 80
 
-chi2_th: 5.991
+chi2_th: 15.991
 
 video_id: 1
+
+plot:
+  size: [300, 50]
+  maxmin: [1000.0, 0.0]
+  item_width: 5
 
 gftt_radius: 2
 triangulation_log: 0

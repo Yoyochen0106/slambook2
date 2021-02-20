@@ -5,6 +5,7 @@
 #include "myslam/feature.h"
 #include "myslam/frame.h"
 #include "myslam/config.h"
+#include "myslam/util.h"
 
 #include <pangolin/pangolin.h>
 #include <opencv2/opencv.hpp>
@@ -38,6 +39,16 @@ void Viewer::UpdateMap() {
     map_updated_ = true;
 }
 
+static void LoadDataPlotConfig(DataPlot &plot, const cv::FileNode &cfg) {
+    if (cfg.type() == cv::FileNode::Type::NONE) {
+        LOG(ERROR) << "Empty config FileNode";
+    }
+    plot.size_ = cv::Size(int(cfg["size"][0]), int(cfg["size"][1]));
+    plot.value_max_ = double(cfg["maxmin"][0]);
+    plot.value_min_ = double(cfg["maxmin"][1]);
+    plot.item_w_ = int(cfg["item_width"]);
+}
+
 void Viewer::ThreadLoop() {
     pangolin::CreateWindowAndBind("MySLAM", 1024, 768);
     glEnable(GL_DEPTH_TEST);
@@ -59,8 +70,13 @@ void Viewer::ThreadLoop() {
 
     int waitKey_time = Config::Get<int>("waitKey_time");
     int sleep_time = Config::Get<int>("sleep_time");
+    
+    DataPlot plot0;
+    LoadDataPlotConfig(plot0, Config::Get<cv::FileNode>("plot"));
+    plot0.Setup();
 
     LOG(INFO) << "waitKey_time=" << waitKey_time << "|sleep_time=" << sleep_time;
+    double v = 0;
 
     while (!pangolin::ShouldQuit() && viewer_running_) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -73,6 +89,12 @@ void Viewer::ThreadLoop() {
             FollowCurrentFrame(vis_camera);
 
             cv::Mat img = PlotFrameImage();
+            auto &ls = current_frame_->features_left_;
+            int cnt;
+            cnt = std::count_if(begin(ls), end(ls), [](Feature::Ptr ft) { return !ft->is_outlier_; });
+            plot0.Push(cnt);
+            plot0.Draw(img, cv::Point(0, 0));
+
             cv::imshow("image", img);
 
             std::vector<PostImshowItemType> imshows;
