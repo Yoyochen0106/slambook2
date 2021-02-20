@@ -52,13 +52,16 @@ bool Frontend::AddFrame(myslam::Frame::Ptr frame) {
     switch (status_) {
         case FrontendStatus::INITING:
             StereoInit();
+            viewer_->PostValue("init_cnts", 1);
             break;
         case FrontendStatus::TRACKING_GOOD:
         case FrontendStatus::TRACKING_BAD:
             Track();
+            viewer_->PostValue("init_cnts", 0);
             break;
         case FrontendStatus::LOST:
             Reset();
+            viewer_->PostValue("init_cnts", 0);
             break;
     }
 

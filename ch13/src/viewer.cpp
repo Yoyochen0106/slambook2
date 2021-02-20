@@ -26,6 +26,11 @@ void Viewer::PostImshow(std::string title, cv::Mat image) {
     postImshows_.push_back(std::make_pair(title, image));
 }
 
+void Viewer::PostValue(std::string name, double value) {
+    // It can create empty vector automatically
+    postValues_[name].push_back(value);
+}
+
 void Viewer::AddCurrentFrame(Frame::Ptr current_frame) {
     std::unique_lock<std::mutex> lck(viewer_data_mutex_);
     current_frame_ = current_frame;
@@ -87,35 +92,43 @@ void Viewer::ThreadLoop() {
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         vis_display.Activate(vis_camera);
 
-        std::unique_lock<std::mutex> lock(viewer_data_mutex_);
-        if (current_frame_) {
-            DrawFrame(current_frame_, green);
-            FollowCurrentFrame(vis_camera);
+        {
+            std::unique_lock<std::mutex> lock(viewer_data_mutex_);
+            if (current_frame_) {
+                DrawFrame(current_frame_, green);
+                FollowCurrentFrame(vis_camera);
 
-            cv::Mat img = PlotFrameImage();
-            auto &ls = current_frame_->features_left_;
-            int cnt;
-            cnt = std::count_if(begin(ls), end(ls), [](Feature::Ptr ft) { return !ft->is_outlier_; });
-            plot0.Push(cnt);
-            plot0.Draw(img, cv::Point(0, 0));
+                cv::Mat img = PlotFrameImage();
+                auto &ls = current_frame_->features_left_;
+                int cnt;
+                cnt = std::count_if(begin(ls), end(ls), [](Feature::Ptr ft) { return !ft->is_outlier_; });
+                plot0.Push(cnt);
+                plot0.Draw(img, cv::Point(0, 0));
 
-            cv::imshow("image", img);
+                std::map<std::string, std::vector<double>> values;
+                values.swap(postValues_);
 
-            std::vector<PostImshowItemType> imshows;
-            imshows.swap(postImshows_);
-            for (PostImshowItemType item : imshows) {
-                cv::imshow(item.first, item.second);
+                for (double v : values["init_cnts"]) {
+                    plot1.Push(v);
+                }
+                plot1.Draw(img, cv::Point(0, plot0.size_.height));
+
+                cv::imshow("image", img);
+
+                std::vector<PostImshowItemType> imshows;
+                imshows.swap(postImshows_);
+                for (PostImshowItemType item : imshows) {
+                    cv::imshow(item.first, item.second);
+                }
             }
 
-            cv::waitKey(waitKey_time);
-        }
-
-        if (map_) {
-            DrawMapPoints();
+            if (map_) {
+                DrawMapPoints();
+            }
         }
 
         pangolin::FinishFrame();
-        usleep(1000 * sleep_time);
+        cv::waitKey(waitKey_time);
     }
 
     LOG(INFO) << "Stop viewer";

@@ -29,6 +29,8 @@ class Viewer {
     void Close();
 
     void PostImshow(std::string title, cv::Mat image);
+    
+    void PostValue(std::string name, double value);
 
     // 增加一个当前帧
     void AddCurrentFrame(Frame::Ptr current_frame);
@@ -63,8 +65,10 @@ class Viewer {
 
     std::mutex viewer_data_mutex_;
 
-    std::vector<PostImshowItemType> postImshows_; 
+    std::vector<PostImshowItemType> postImshows_;
+    std::map<std::string, std::vector<double>> postValues_;
 };
+
 }  // namespace myslam
 
 #endif  // MYSLAM_VIEWER_H
