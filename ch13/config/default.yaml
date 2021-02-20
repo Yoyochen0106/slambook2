@@ -21,9 +21,17 @@ chi2_th: 15.991
 video_id: 1
 
 plot:
-  size: [300, 50]
+  size: [150, 50]
   maxmin: [1000.0, 0.0]
   item_width: 5
+
+plot0:
+  inherit: plot
+  maxmin: [20, 0]
+
+plot1:
+  inherit: plot
+  maxmin: [1, 0]
 
 gftt_radius: 2
 triangulation_log: 0

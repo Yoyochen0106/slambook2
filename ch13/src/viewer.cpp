@@ -43,10 +43,11 @@ static void LoadDataPlotConfig(DataPlot &plot, const cv::FileNode &cfg) {
     if (cfg.type() == cv::FileNode::Type::NONE) {
         LOG(ERROR) << "Empty config FileNode";
     }
-    plot.size_ = cv::Size(int(cfg["size"][0]), int(cfg["size"][1]));
-    plot.value_max_ = double(cfg["maxmin"][0]);
-    plot.value_min_ = double(cfg["maxmin"][1]);
-    plot.item_w_ = int(cfg["item_width"]);
+    if (!cfg["inherit"].isNone()) LoadDataPlotConfig(plot, Config::Get<cv::FileNode>(static_cast<std::string>(cfg["inherit"])));
+    if (!cfg["size"].isNone()) plot.size_ = cv::Size(int(cfg["size"][0]), int(cfg["size"][1]));
+    if (!cfg["maxmin"].isNone()) plot.value_max_ = double(cfg["maxmin"][0]);
+    if (!cfg["maxmin"].isNone()) plot.value_min_ = double(cfg["maxmin"][1]);
+    if (!cfg["item_width"].isNone()) plot.item_w_ = int(cfg["item_width"]);
 }
 
 void Viewer::ThreadLoop() {
@@ -72,8 +73,11 @@ void Viewer::ThreadLoop() {
     int sleep_time = Config::Get<int>("sleep_time");
     
     DataPlot plot0;
-    LoadDataPlotConfig(plot0, Config::Get<cv::FileNode>("plot"));
+    DataPlot plot1;
+    LoadDataPlotConfig(plot0, Config::Get<cv::FileNode>("plot0"));
+    LoadDataPlotConfig(plot1, Config::Get<cv::FileNode>("plot1"));
     plot0.Setup();
+    plot1.Setup();
 
     LOG(INFO) << "waitKey_time=" << waitKey_time << "|sleep_time=" << sleep_time;
     double v = 0;
