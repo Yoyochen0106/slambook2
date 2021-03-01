@@ -1,4 +1,4 @@
-add_library(myslam SHARED
+set(SRC
         frame.cpp
         mappoint.cpp
         map.cpp
@@ -12,6 +12,12 @@ add_library(myslam SHARED
         dataset.cpp
         util.cpp
 )
+
+if (WIN32)
+        add_library(myslam STATIC ${SRC})
+else ()
+        add_library(myslam SHARED ${SRC})
+endif ()
 
 target_link_libraries(myslam
         ${THIRD_PARTY_LIBS})

@@ -3,8 +3,16 @@ project(myslam)
 
 set(CMAKE_BUILD_TYPE Release)
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -Wall")
-set(CMAKE_CXX_FLAGS_RELEASE  "-std=c++11 -O3 -pthread")
+if (WIN32)
+    set(CMAKE_CXX_FLAGS "/bigobj /EHsc /w")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS}")
+    include_directories(${EXTRA_INCLUDE_DIRS})
+    set(THIRD_PARTY_LIBS ${THIRD_PARTY_LIBS} ${EXTRA_LIBS})
+else ()
+    set(CMAKE_CXX_FLAGS "-std=c++11 -Wall")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -pthread")
+    set(THIRD_PARTY_LIBS ${THIRD_PARTY_LIBS} pthread)
+endif ()
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
@@ -29,6 +37,11 @@ include_directories(${Sophus_INCLUDE_DIRS})
 # G2O
 find_package(G2O REQUIRED)
 include_directories(${G2O_INCLUDE_DIRS})
+if (WIN32)
+    set(G2O_LIBS g2o_core_d g2o_stuff_d g2o_types_sba_d g2o_solver_csparse_d g2o_csparse_extension_d)
+else ()
+    set(G2O_LIBS g2o_core g2o_stuff g2o_types_sba g2o_solver_csparse g2o_csparse_extension)
+endif ()
 
 # glog
 find_package(Glog REQUIRED)
@@ -47,16 +60,18 @@ find_package(CSparse REQUIRED)
 include_directories(${CSPARSE_INCLUDE_DIR})
 
 link_directories( "/usr/local/lib" )
+link_directories( "${EXTRA_LINK_DIRS}" )
 
 set(THIRD_PARTY_LIBS
+        ${THIRD_PARTY_LIBS}
+        ${EXTRA_LIBS}
         ${OpenCV_LIBS}
         ${Sophus_LIBRARIES}
         ${Pangolin_LIBRARIES} # GL GLU GLEW glut
-        g2o_core g2o_stuff g2o_types_sba g2o_solver_csparse g2o_csparse_extension
+        ${G2O_LIBS}
         ${GTEST_BOTH_LIBRARIES}
         ${GLOG_LIBRARIES}
         ${GFLAGS_LIBRARIES}
-        pthread
         ${CSPARSE_LIBRARY}
         )
 

@@ -113,6 +113,9 @@ typedef Sophus::SO3d SO3;
 using cv::Mat;
 
 // glog
+#ifdef _WIN32
+#define GLOG_NO_ABBREVIATED_SEVERITIES
+#endif
 #include <glog/logging.h>
 
 
