@@ -97,8 +97,16 @@ void DataPlot::Push(double value) {
     cv::rectangle(cache_dst_, value_bar, color, cv::FILLED);
 
     // Draw over/under indicator
-    cv::Scalar color_over(0, 0, (int)(255 * over));
-    cv::Scalar color_under(0, 0, (int)(255 * under));
+    cv::Scalar color_over(
+        int(255.0 * 0.2),
+        int(255.0 * 0.2),
+        int(255.0 * map(0.0, 1.0, 0.2, 1.0, over))
+    );
+    cv::Scalar color_under(
+        int(255.0 * 0.2),
+        int(255.0 * 0.2),
+        int(255.0 * map(0.0, 1.0, 0.2, 1.0, under))
+    );
     cv::rectangle(cache_dst_, box_over_, color_over, cv::FILLED);
     cv::rectangle(cache_dst_, box_under_, color_under, cv::FILLED);
 

@@ -11,8 +11,8 @@ camera.cx: 325.1
 camera.cy: 249.7
 
 num_features: 150
-num_features_init: 50
-num_features_tracking: 10
+num_features_init: 5
+num_features_tracking: 5
 num_features_tracking_bad: 5
 num_features_needed_for_keyframe: 80
 
@@ -27,7 +27,7 @@ plot:
 
 plot0:
   inherit: plot
-  maxmin: [20, 0]
+  maxmin: [200, 0]
 
 plot1:
   inherit: plot
@@ -36,6 +36,7 @@ plot1:
 gftt_radius: 2
 triangulation_log: 0
 pose_estimation_log: 0
+features_log: 1
 isw_block: 1
 reset_wait: 0
 

@@ -108,7 +108,7 @@ Frame::Ptr Dataset::NextFrame() {
         img_right = tmp;
     }
 
-    cout << "Frame: " << current_image_index_ << endl;
+    LOG(INFO) << "Frame: " << current_image_index_;
 
 //     imwrite("out/orig.png", image);
 //     imwrite("out/lf.png", img_left);

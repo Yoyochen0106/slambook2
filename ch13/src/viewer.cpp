@@ -101,7 +101,7 @@ void Viewer::ThreadLoop() {
                 cv::Mat img = PlotFrameImage();
                 auto &ls = current_frame_->features_left_;
                 int cnt;
-                cnt = std::count_if(begin(ls), end(ls), [](Feature::Ptr ft) { return !ft->is_outlier_; });
+                cnt = std::count_if(begin(ls), end(ls), [](Feature::Ptr ft) { return !ft->map_point_.expired(); });
                 plot0.Push(cnt);
                 plot0.Draw(img, cv::Point(0, 0));
 

@@ -92,6 +92,15 @@ bool Frontend::Track() {
     InsertKeyframe();
     relative_motion_ = current_frame_->Pose() * last_frame_->Pose().inverse();
 
+    if (Config::Get<int>("features_log")) {
+        std::stringstream ss;
+        for (int i = 0; i < current_frame_->features_left_.size(); i++) {
+            Feature::Ptr ftl = current_frame_->features_left_[i];
+            ss << ftl->position_.pt << "," << !ftl->map_point_.expired() << "|";
+        }
+        LOG(INFO) << "Feature log: track " << ss.str();
+    }
+
     if (viewer_) viewer_->AddCurrentFrame(current_frame_);
     return true;
 }
@@ -330,9 +339,19 @@ bool Frontend::StereoInit() {
             viewer_->AddCurrentFrame(current_frame_);
             viewer_->UpdateMap();
         }
-        return true;
     }
-    return false;
+
+    if (Config::Get<int>("features_log")) {
+        std::stringstream ss;
+        for (int i = 0; i < current_frame_->features_left_.size(); i++) {
+            Feature::Ptr ftl = current_frame_->features_left_[i];
+            Feature::Ptr ftr = current_frame_->features_right_[i];
+            ss << ftl->position_.pt << "," << ftr->position_.pt << "," << !ftl->map_point_.expired() << "|";
+        }
+        LOG(INFO) << "Feature log: init " << ss.str();
+    }
+
+    return build_map_success;
 }
 
 int Frontend::DetectFeatures() {
