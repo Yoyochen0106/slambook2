@@ -10,6 +10,13 @@
 
 namespace myslam {
 
+template <typename T>
+inline std::string to_string(cv::Point_<T> pt) {
+    std::stringstream ss;
+    ss << "[" << pt.x << "," << pt.y << "]";
+    return ss.str();
+}
+
 class DataPlot {
 public:
     typedef std::shared_ptr<DataPlot> Ptr;

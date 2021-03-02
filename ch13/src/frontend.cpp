@@ -14,6 +14,7 @@
 #include "myslam/g2o_types.h"
 #include "myslam/map.h"
 #include "myslam/viewer.h"
+#include "myslam/util.h"
 
 namespace myslam {
 
@@ -346,7 +347,7 @@ bool Frontend::StereoInit() {
         for (int i = 0; i < current_frame_->features_left_.size(); i++) {
             Feature::Ptr ftl = current_frame_->features_left_[i];
             Feature::Ptr ftr = current_frame_->features_right_[i];
-            ss << ftl->position_.pt << "," << ftr->position_.pt << "," << !ftl->map_point_.expired() << "|";
+            ss << ftl->position_.pt << "," << (bool(ftr) ? to_string(ftr->position_.pt) : "no") << "," << !ftl->map_point_.expired() << "|";
         }
         LOG(INFO) << "Feature log: init " << ss.str();
     }
