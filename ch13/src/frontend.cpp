@@ -458,6 +458,7 @@ bool Frontend::BuildInitMap() {
         LOG(INFO) << "triangulate:" << poses[0].matrix() << "|" << poses[1].matrix();
     }
     size_t cnt_init_landmarks = 0;
+    int not_ok = 0, neg_dist = 0;
     for (size_t i = 0; i < current_frame_->features_left_.size(); ++i) {
         if (current_frame_->features_right_[i] == nullptr) continue;
         // create map point from triangulation
@@ -471,6 +472,12 @@ bool Frontend::BuildInitMap() {
         Vec3 pworld = Vec3::Zero();
 
         bool ok = triangulation(poses, points, pworld);
+        if (!ok) {
+            not_ok++;
+        }
+        if (pworld[2] <= 0) {
+            neg_dist++;
+        }
         if (ok && pworld[2] > 0) {
             auto new_map_point = MapPoint::CreateNewMappoint();
             new_map_point->SetPos(pworld);
@@ -491,6 +498,7 @@ bool Frontend::BuildInitMap() {
 
     LOG(INFO) << "Initial map created with " << cnt_init_landmarks
               << " map points";
+    LOG(INFO) << "notok: " << not_ok << "|neg_dist" << neg_dist;
 
     return true;
 }
