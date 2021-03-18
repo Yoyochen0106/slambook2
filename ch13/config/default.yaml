@@ -33,6 +33,10 @@ plot1:
   inherit: plot
   maxmin: [1, 0]
 
+plot_vars:
+  - frame_mp_assoc_cnts
+  - init_cnts
+
 gftt_radius: 2
 triangulation_log: 0
 pose_estimation_log: 0

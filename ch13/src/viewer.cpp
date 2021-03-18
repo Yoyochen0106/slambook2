@@ -87,6 +87,15 @@ void Viewer::ThreadLoop() {
     LOG(INFO) << "waitKey_time=" << waitKey_time << "|sleep_time=" << sleep_time;
     double v = 0;
 
+    cv::FileNode plotVarsNode = Config::Get<cv::FileNode>("plot_vars");
+    std::vector<std::string> plotVars;
+    int plotVarsCount = plotVarsNode.size();
+    for (int i = 0; i < plotVarsCount; i++) {
+        plotVars.push_back((std::string)plotVarsNode[i]);
+    }
+
+    LOG(INFO) << "plotVars: " << formatSequence(std::begin(plotVars), std::end(plotVars));
+
     while (!pangolin::ShouldQuit() && viewer_running_) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -99,19 +108,15 @@ void Viewer::ThreadLoop() {
                 FollowCurrentFrame(vis_camera);
 
                 cv::Mat img = PlotFrameImage();
-                auto &ls = current_frame_->features_left_;
-                int cnt;
-                cnt = std::count_if(begin(ls), end(ls), [](Feature::Ptr ft) { return !ft->map_point_.expired(); });
-                plot0.Push(cnt);
-                plot0.Draw(img, cv::Point(0, 0));
 
                 std::map<std::string, std::vector<double>> values;
                 values.swap(postValues_);
 
-                for (double v : values["init_cnts"]) {
-                    plot1.Push(v);
-                }
-                plot1.Draw(img, cv::Point(0, plot0.size_.height));
+                for (double v : values["frame_mp_assoc_cnts"]) { plot0.Push(v); }
+                for (double v : values["init_cnts"]) { plot1.Push(v); }
+                int y = 0;
+                plot0.Draw(img, cv::Point(0, y)); y += plot0.size_.height;
+                plot1.Draw(img, cv::Point(0, y)); y += plot1.size_.height;
 
                 cv::imshow("image", img);
 

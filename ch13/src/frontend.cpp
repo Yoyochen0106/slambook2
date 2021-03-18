@@ -66,6 +66,11 @@ bool Frontend::AddFrame(myslam::Frame::Ptr frame) {
             break;
     }
 
+    auto &ls = current_frame_->features_left_;
+    int cnt;
+    cnt = std::count_if(begin(ls), end(ls), [](Feature::Ptr ft) { return !ft->map_point_.expired(); });
+    viewer_->PostValue("frame_mp_assoc_cnts", cnt);
+
     last_frame_ = current_frame_;
     return true;
 }

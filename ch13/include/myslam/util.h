@@ -17,6 +17,26 @@ inline std::string to_string(cv::Point_<T> pt) {
     return ss.str();
 }
 
+template <typename It>
+inline std::string formatSequence(It start, It end, std::function<std::string(decltype(*start))> formatter) {
+    std::stringstream ss("[");
+    for (; start != end; start++) {
+        ss << formatter(*start);
+    }
+    ss << "]";
+    return ss.str();
+}
+
+template <typename It>
+inline std::string formatSequence(It start, It end) {
+    std::stringstream ss("[");
+    for (; start != end; start++) {
+        ss << *start;
+    }
+    ss << "]";
+    return ss.str();
+}
+
 class DataPlot {
 public:
     typedef std::shared_ptr<DataPlot> Ptr;
