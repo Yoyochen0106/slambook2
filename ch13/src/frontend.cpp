@@ -328,6 +328,8 @@ int Frontend::TrackLastFrame() {
 }
 
 bool Frontend::StereoInit() {
+    relative_motion_ = SE3(Mat44::Identity());
+
     if (last_frame_) {
         current_frame_->SetPose(last_frame_->Pose());
     }
