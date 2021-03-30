@@ -330,9 +330,9 @@ int Frontend::TrackLastFrame() {
 bool Frontend::StereoInit() {
     relative_motion_ = SE3(Mat44::Identity());
 
-    if (last_frame_) {
-        current_frame_->SetPose(last_frame_->Pose());
-    }
+    // if (last_frame_) {
+    //     current_frame_->SetPose(last_frame_->Pose());
+    // }
     int num_features_left = DetectFeatures();
     int num_coor_features = FindFeaturesInRight();
 
@@ -512,9 +512,9 @@ bool Frontend::BuildInitMap() {
 
 bool Frontend::Reset() {
     // LOG(INFO) << "Reset is not implemented. ";
-    if (last_frame_) {
-        current_frame_->SetPose(last_frame_->Pose());
-    }
+    // if (last_frame_) {
+    //     current_frame_->SetPose(last_frame_->Pose());
+    // }
     std::stringstream ss;
     ss << "features_cnts: ";
     for (auto ls : features_cnts) {
